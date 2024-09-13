@@ -48,7 +48,8 @@ async function getTokenFromAuth0(
         return await doAuth0LoginFlow({
             auth0Domain: AUTH0_DOMAIN,
             auth0ClientId: AUTH0_CLIENT_ID,
-            audience: VENUS_AUDIENCE
+            audience: VENUS_AUDIENCE,
+            context
         });
     } catch {
         return await doAuth0DeviceAuthorizationFlow({

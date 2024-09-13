@@ -1,7 +1,9 @@
 import axios from "axios";
 import { IncomingMessage, Server } from "http";
-import open from "open";
+import { TaskContext } from "@fern-api/task-context";
 import { createServer } from "./createServer";
+import boxen from "boxen";
+import open from "open";
 
 const SUCCESS_PAGE = `
 <!DOCTYPE html>
@@ -32,14 +34,16 @@ const SUCCESS_PAGE = `
 export async function doAuth0LoginFlow({
     auth0Domain,
     auth0ClientId,
-    audience
+    audience,
+    context
 }: {
     auth0Domain: string;
     auth0ClientId: string;
     audience: string;
+    context: TaskContext;
 }): Promise<string> {
     const { origin, server } = await createServer();
-    const { code } = await getCode({ server, auth0Domain, auth0ClientId, origin, audience });
+    const { code } = await getCode({ server, auth0Domain, auth0ClientId, origin, audience, context });
     server.close();
     const token = await getTokenFromCode({ auth0Domain, auth0ClientId, code, origin });
     return token;
@@ -50,13 +54,15 @@ function getCode({
     auth0Domain,
     auth0ClientId,
     origin,
-    audience
+    audience,
+    context
 }: {
     server: Server;
     auth0Domain: string;
     auth0ClientId: string;
     origin: string;
     audience: string;
+    context: TaskContext;
 }) {
     return new Promise<{ code: string }>((resolve) => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -70,7 +76,18 @@ function getCode({
             }
         });
 
-        void open(constructAuth0Url({ auth0ClientId, auth0Domain, origin, audience }));
+        try {
+            void open(constructAuth0Url({ auth0ClientId, auth0Domain, origin, audience }));
+        } catch (error) {
+            // Ignore, we can't open the browser
+            context.logger.info(
+                [
+                    "🌿 Login to Fern!",
+                    "",
+                    "Open this link to login: " + constructAuth0Url({ auth0ClientId, auth0Domain, origin, audience })
+                ].join("\n")
+            );
+        }
     });
 }
 

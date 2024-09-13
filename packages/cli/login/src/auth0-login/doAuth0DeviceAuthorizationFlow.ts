@@ -35,9 +35,14 @@ export async function doAuth0DeviceAuthorizationFlow({
 
     if (deviceCodeResponse.status !== 200) {
         context.failAndThrow("Failed to authenticate", deviceCodeResponse.data);
+        return Promise.reject("Failed to authenticate");
     }
 
-    await open(deviceCodeResponse.data.verification_uri_complete);
+    try {
+        await open(deviceCodeResponse.data.verification_uri_complete);
+    } catch (error) {
+        // Ignore, we can't open the browser
+    }
 
     context.logger.info(
         [
